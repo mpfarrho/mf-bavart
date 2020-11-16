@@ -1,71 +1,5 @@
-# function to derive moments for pits
-pit.mom <- function(y,cred=.95,digits=3){
-  if(any(is.na(y))){
-    stop("Series must not contain NAs.")
-  }
-  
-  nburn <- 5000
-  nsave <- 10000
-  ntot <- nburn+nsave
-  
-  # prior for the regression coefficient
-  b0 <- 0
-  V0 <- 100
-  V0inv <- 1/V0
-  
-  # prior for the variances
-  c0 <- d0 <- 0.01
-  
-  # storage
-  mu.store <- matrix(NA,nsave)
-  sig2.store <- matrix(NA,nsave)
-  ar1.store <- matrix(NA,nsave)
-  
-  for(para in c("mean","ar1")){
-    if(para=="mean"){
-      X <- matrix(1,length(y),ncol=1)
-    }else if(para=="ar1"){
-      X <- embed(y,dimension=2)[,2]
-      y <- y[2:length(y)]
-    }
-    T <- length(y)
-    sig2_draw <- 10
-    
-    # sampling loop
-    for(irep in 1:ntot){
-      V1 <- solve(V0inv + crossprod(X)/sig2_draw)
-      b1 <- V1 %*% (V0inv%*%b0 + crossprod(X,y)/sig2_draw)
-      b_draw <- b1 + t(chol(V1)) %*% rnorm(1)
-      
-      c1 <- c0 + T/2
-      d1 <- d0 + crossprod((y - X %*% b_draw))/2
-      sig2_draw <- 1/rgamma(1, c1, d1)
-      
-      if(irep>nburn){
-        if(para=="mean"){
-          mu.store[irep-nburn] <- b_draw
-          sig2.store[irep-nburn] <- sig2_draw
-        }else if(para=="ar1"){
-          ar1.store[irep-nburn] <- b_draw
-        }
-      }
-    } 
-  }
-  post <- rbind(quantile(mu.store,prob=c(1-cred,.5,cred)),
-                quantile(sig2.store,prob=c(1-cred,.5,cred)),
-                quantile(ar1.store,prob=c(1-cred,.5,cred)))
-  rownames(post) <- c("mu","sig2","ar1")
-  
-  tab <- c(paste0(round(post["mu",2],digits=digits)," (",round(post["mu",1],digits=digits),", ",round(post["mu",3],digits=digits),")"),
-           paste0(round(post["sig2",2],digits=digits)," (",round(post["sig2",1],digits=digits),", ",round(post["sig2",3],digits=digits),")"),
-           paste0(round(post["ar1",2],digits=digits)," (",round(post["ar1",1],digits=digits),", ",round(post["ar1",3],digits=digits),")"))
-  names(tab) <- c("mu","sig2","ar1")
-  
-  return <- list("post"=post,"tab"=tab)
-  return(return)
-}
 
-#Function to perform a seven-component mixture approximation to the log Chi2 
+# Horseshoe prior in its auxiliary representation, see Makalic and Schmidt (2015)
 get.hs <- function(bdraw,lambda.hs,nu.hs,tau.hs,zeta.hs){
   k <- length(bdraw)
   if (is.na(tau.hs)){
@@ -82,6 +16,8 @@ get.hs <- function(bdraw,lambda.hs,nu.hs,tau.hs,zeta.hs){
   ret <- list("psi"=(lambda.hs*tau.hs),"lambda"=lambda.hs,"tau"=tau.hs,"nu"=nu.hs,"zeta"=zeta.hs)
   return(ret)
 }
+
+# BART regression
 BART.reg <- function(Y, X, nr = 1, nsave, nburn, cgm.exp = 2, cgm.level = 0.95, num.trees=200){
   ntot <- nsave+nburn
   
@@ -181,6 +117,7 @@ BART.reg <- function(Y, X, nr = 1, nsave, nburn, cgm.exp = 2, cgm.level = 0.95, 
   res.list <- list(BART = sampler, h = h.store, A0 = A0.store, sigma2 = sigma2.store, varcount =varcount)
   return(res.list)
 }
+
 BARTVAR <- function(Y=Y, nsave, nburn, p, fhorz, imphor, cgm.exp = 2, cgm.level = 0.95, num.trees = 75,predictions=TRUE, IRFs = FALSE, sl.shock =3){
   X <- embed(Y , p+1)
   Y <- Y[(p+1):nrow(Y),, drop=F]
@@ -331,11 +268,6 @@ BARTVAR <- function(Y=Y, nsave, nburn, p, fhorz, imphor, cgm.exp = 2, cgm.level 
   res.obj <- list(predictions = pred.store, IRFs = IRF.store, vola = H.store, SIGMA = Sigma.store, bart.obj = bartvar.list, fit = fit.store)
 }
 
-
-
-
-
-
 mix.approx <- function(Ystar, h){
 
 #Ystar <- rnorm(100)
@@ -367,6 +299,7 @@ for (n in seq_len(N)){
 return(list(mu=mi.t, sig2=sig2.t))
 }
 
+# construct the companion matrix                           
 get_companion <- function(Beta_,varndxv){
   nn <- varndxv[[1]]
   nd <- varndxv[[2]]
@@ -385,6 +318,7 @@ get_companion <- function(Beta_,varndxv){
   
   return(list(MM=MM,Jm=Jm))
 }
+                          
 # FFBS with lags
 ffbs <- function(y,MM,MMcons,Ft,Rt,Sig_big,beta11,p11,kk,t,p,m, beta0, P00){
 # 
@@ -414,7 +348,6 @@ ffbs <- function(y,MM,MMcons,Ft,Rt,Sig_big,beta11,p11,kk,t,p,m, beta0, P00){
     beta_tt[i,] <- beta11
    # if (i == 344) break()
   }
- # browser()
   
   # smoothing (backward recursions)
   beta2 <- matrix(0,t,kk) # collect state variable draws
@@ -443,7 +376,6 @@ ffbs <- function(y,MM,MMcons,Ft,Rt,Sig_big,beta11,p11,kk,t,p,m, beta0, P00){
   out <- c(rep(0,p),beta2[,1])
   return(out)
 }
-
 
 KF.slow <- function(y,MM,Ft,Rt,Sig_big,kk,t, beta0, P00){
   # Y00[is.na(Y00)] <- 0
