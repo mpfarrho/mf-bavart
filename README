@@ -8,7 +8,7 @@ These files create a function mfbavart(...) to estimate the MF-BAVART model.
 - example.R contains an example code for using the function.
 
 In addition to the baseline model in the paper, the code also includes an option
-to introduce stochastic volatility in the error terms. Several parts of the original code
+to introduce stochastic volatility (SV) in the error terms. Several parts of the original code
 used for the paper in directory "replication" have been replaced to improve 
 computational efficiency. For replication files only, see "replication".
 
