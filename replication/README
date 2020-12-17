@@ -7,4 +7,4 @@ Source-files:
 “simulation_script.R” contains the simulation study.
 “data_script.R” transforms xls-files in “raw-data” for use of the functions.
 
-“raw-data” contains raw xls-files of our dataset for all four countries.
+“raw-data” contains raw xls-files of our dataset for all four countries. Use "data-script.R" to import.
