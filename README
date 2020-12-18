@@ -22,7 +22,8 @@ for technical support regarding their excellent packages.
 
 Inputs for mfbavart(...)
 - data:           a list that contains ts-objects of different frequencies in its 
-                  M (number of endogenous variables) slots
+                  M (number of endogenous variables) slots, such that high-frequency (monthly)
+                  series are ordered first and followed by low-frequency series (quarterly)
 - itr:            intertermporal restriction ("lvl" or "grw") of length 
                   corresponding to number of low frequency series
 - p:              numeric, lag-length of the VAR (minimum of 5 if itr=="grw", and 3 if itr=="lvl")
