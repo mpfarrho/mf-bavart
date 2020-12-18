@@ -50,6 +50,6 @@ Inputs for mfbavart(...):
 - quiet           TRUE/FALSE, whether progress bar is indicated during sampling
 
 Function returns:
-- Y               [nsave,T,M] array that contains the latent states (see also option "exact")
-- fcst            [nsave,fhorz,M] array that contains forecasts
-- Yq              [nsave,T+fhorz,M] array that contains aggregated filtered and forecasted series
+- Y              [nsave,T,M] array that contains the latent states (see also option "exact")
+- fcst           [nsave,fhorz,M] array that contains forecasts
+- Yq             [nsave,T+fhorz,M] array that contains aggregated filtered and forecasted series
