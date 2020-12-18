@@ -4,44 +4,7 @@
 # 
 # This file creates a function mfbavart(...) to estimate the MF-BAVART model.
 # In addition to the baseline model in the paper, the code also includes an option
-# to introduce stochastic volatility in the error terms. Several parts of the original code
-# used for the paper in directory "replication" have been replaced to improve 
-# computational efficiency.
-# 
-# This code comes without technical support of any kind. Please report any typos
-# or errors to michael.pfarrhofer@sbg.ac.at. This code is free to use for academic
-# purposes only, provided that the paper is cited properly.
-# 
-# Some codes and helper functions are taken or adapted from the "mfbvar" package.
-# Thanks to Vincent Dorie (mtn. of "dbarts") and Sebastian Ankargren (mtn. of "mfbvar")
-# for technical support regarding their excellent packages.
-# 
-# Inputs
-# - data:           a list that contains ts-objects of different frequencies in its M (number of endogenous variables) slots
-# - itr:            intertermporal restriction ("lvl" or "grw") of length corresponding to number of low frequency series
-# - p:              numeric, lag-length of the VAR (minimum of 5 if itr=="grw", and 3 if itr=="lvl")
-# - fhorz:          numeric, forecast horizon in months (3 per quarter)
-# - cons:           TRUE/FALSE, whether a constant should be included
-# - VAR.mean:       "linear" for horseshoe prior on linear VAR coefficients, "bart" for using additive regression trees
-# - exact:          TRUE/FALSE whether BART fit is stored in output values or filtered data based on approximation
-# - sv:             TRUE/FALSE whether structural errors feature stochastic volatility
-# - var.thrsh:      numeric, threshold for resampling coefficients by draw (for sampler stability)
-# - max.count.var:  numeric, maximum number of resampling steps
-# 
-# - cgm.level:      numeric in (0,1), alpha in the paper (probability of terminal node)
-# - cgm.exp:        numeric > 0, beta in the paper (probability of terminal node)
-# - sd.mu:          numeric, gamma in the paper
-# - num.trees:      numeric, number of trees for BART, S in the paper
-# - prior.sig:      numeric of length 2, [1] nu_j, [2] v in the paper, if VAR.mean=="linear" shape/rate of iG prior
-# - nburn:          numeric, number of burnins
-# - nsave:          numeric, number of draws for posterior/predictive inference
-# - thinfac:        numeric, thinning factor
-# - quiet:          TRUE/FALSE, whether progress bar is indicated during sampling
-# 
-# Function returns
-# - Y: an array of dimension nsave x T x M that contains the latent states
-# - fcst: an array of dimension nsave x fhorz x M that contains forecasts
-# - Yq: an array of dimension nsave x T+fhorz x M that contains aggregated filtered and forecasted series
+# to introduce stochastic volatility in the error terms.
 
 mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE,sv=FALSE,var.thrsh=10,max.count.var=10,
                      cgm.level=0.95,cgm.exp=2,sd.mu=2,num.trees=250,prior.sig,
@@ -49,7 +12,7 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
                      quiet=FALSE){
   
   # required packages
-  require(MASS)
+  require(MASS) # some matrix-functions
   require(stochvol) # sampling stochastic volatilities
   require(dbarts) # sampling trees
   require(mfbvar) # sampling latent states
