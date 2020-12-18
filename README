@@ -1,6 +1,8 @@
 "Nowcasting in a Pandemic using Non-Parametric Mixed Frequency VARs"
 by Huber, F., Koop, G., Onorante, L., Pfarrhofer, M., and J. Schreiner,
 Journal of Econometrics (forthcoming)
+- Published at        https://www.sciencedirect.com/science/article/pii/S0304407620303936
+- Working paper at    https://arxiv.org/abs/2008.12706
 
 These files create a function mfbavart(...) to estimate the MF-BAVART model.
 - mfbavart_func.R contains the main function
