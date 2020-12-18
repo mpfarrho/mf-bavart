@@ -183,6 +183,7 @@ list_to_matrix <- function(Y_in) {
   return(list("Yraw"=Y, "freq"=freq))
 }
 
+# get VAR in companion form
 get_companion <- function(Beta_,varndxv){
   nn <- varndxv[[1]]
   nd <- varndxv[[2]]
