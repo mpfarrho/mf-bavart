@@ -180,7 +180,6 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
   
   # storage objects
   Y_store <- array(NA,dim=c(nthin,T,M)) # filtered data
-  F_store <- array(NA,dim=c(nthin,T,M)) # output from BART
   fcst_store <- array(NA,dim=c(nthin,fhorz,M))
   
   # -----------------------------------------------------------------------------
@@ -375,8 +374,8 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
       }else if(VAR.mean=="bart"){
         if(exact){
           for(mm in (M_h+1):M){
-            rep_mm <- sampler.list[[mm]]$run(0L, 1L)
-            F_store[in.thin,,mm] <- (rep_mm$train + rep_mm$sigma*rnorm(T))*Ysd[mm] + Ymu[mm]
+            rep_mm <- sampler.run[[mm]]
+            Y_store[in.thin,,mm] <- (rep_mm$train + rep_mm$sigma*rnorm(T))*Ysd[mm] + Ymu[mm]
           }
         }else{
           Y_store[in.thin,,] <- (beta2*t(matrix(Ysd,M,T)))+t(matrix(Ymu,M,T))
