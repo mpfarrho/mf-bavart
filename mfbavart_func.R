@@ -344,7 +344,7 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
       if(M_l==1){
         var.check <- !(sd(beta2[,(M_h+1):M]) < var.thrsh)
       }else{
-        var.check <- !any(apply(beta2[,1:M],2,sd)<var.thrsh)
+        var.check <- !any(apply(beta2[,(M_h+1):M],2,sd) < var.thrsh)
       }
       if (count.var == max.count.var){
         message("Reached maximum amount of replications.")
