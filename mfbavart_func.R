@@ -394,7 +394,7 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
           Sig_T <- Sig_t[T,,] # use final observation for Sigma
           tree.pred <- matrix(0, M)
           for (hh in seq_len(fhorz)){
-            for (j in seq_len(M)) tree.pred[j] <- sampler.list[[mm]]$predict(X.hat)
+            for (j in seq_len(M)) tree.pred[j] <- sampler.list[[j]]$predict(X.hat)
             Y.tp1 <- as.numeric(tree.pred) + t(chol(Sig_T))%*%rnorm(M)
             
             if (cons){
