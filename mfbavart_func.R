@@ -19,7 +19,7 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
   require(abind) # helper for transformations of objects
   
   # auxiliary functions
-  source("aux_func.R")
+  source("mf-bavart-main/aux_func.R")
   
   # construct design matrices
   Ylist <- list_to_matrix(data)
@@ -373,59 +373,58 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
         Y_store[in.thin,,] <- (beta2*t(matrix(Ysd,M,T)))+t(matrix(Ymu,M,T))
       }else if(VAR.mean=="bart"){
         for(mm in seq_len(M)){
-            if(mm>M_h){
-              rep_mm <- sampler.run[[mm]]
-              Y_store[in.thin,,mm] <- (rep_mm$train + rep_mm$sigma*rnorm(T))*Ysd[mm] + Ymu[mm]
-            }else{
-              Y_store[in.thin,,mm] <- (beta2[,mm]*Ysd[mm]) + Ymu[mm]
-            }
-          }
-        }else{
-          Y_store[in.thin,,] <- (beta2*t(matrix(Ysd,M,T)))+t(matrix(Ymu,M,T))
-        }
-      }
-      
-      Yfc <- matrix(NA,fhorz,M)
-      if(fhorz>0){
-        if(VAR.mean=="bart"){
-          if (cons){
-            X.hat <- c(Y[T,],X[T,1:(M*(p-1))],1)
+          if(mm>M_h){
+            rep_mm <- sampler.run[[mm]]
+            Y_store[in.thin,,mm] <- (rep_mm$train + rep_mm$sigma*rnorm(T))*Ysd[mm] + Ymu[mm]
           }else{
-            X.hat <- c(Y[T,],X[T,1:(M*(p-1))])  
-          }
-          
-          Sig_T <- Sig_t[T,,] # use final observation for Sigma
-          tree.pred <- matrix(0, M)
-          for (hh in seq_len(fhorz)){
-            for (j in seq_len(M)) tree.pred[j] <- sampler.list[[j]]$predict(X.hat)
-            Y.tp1 <- as.numeric(tree.pred) + t(chol(Sig_T))%*%rnorm(M)
-            
-            if (cons){
-              X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))],1)
-            }else{
-              X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))])
-            }
-            Yfc[hh,] <- Y.tp1
-          }
-        }else if(VAR.mean=="linear"){
-          MM <- get_companion
-          comp <- get_companion(A_draw,c(M,cons,p))
-          MM <- comp$MM
-          Jm <- comp$Jm
-          Sig_T <- Sig_t[T,,]
-          
-          SS <- matrix(0,M*p,M*p)
-          SS[1:M,1:M] <- Sig_T
-          zt <- as.numeric(t(Y[T:(T-p+1),]))
-          for(hh in 1:fhorz){
-            zt <- MM%*%zt
-            cholSig <- t(chol(SS[1:M,1:M]))
-            Yfc[hh,] <- zt[1:M]+cholSig%*%rnorm(M,0,1)
-            SS <- MM%*%SS%*%t(MM)+Jm%*%Sig_T%*%t(Jm)
+            Y_store[in.thin,,mm] <- (beta2[,mm]*Ysd[mm]) + Ymu[mm]
           }
         }
-        fcst_store[in.thin,,] <- (Yfc*t(matrix(Ysd,M,fhorz)))+t(matrix(Ymu,M,fhorz))
+      }else{
+        Y_store[in.thin,,] <- (beta2*t(matrix(Ysd,M,T)))+t(matrix(Ymu,M,T))
       }
+    }
+    
+    Yfc <- matrix(NA,fhorz,M)
+    if(fhorz>0){
+      if(VAR.mean=="bart"){
+        if (cons){
+          X.hat <- c(Y[T,],X[T,1:(M*(p-1))],1)
+        }else{
+          X.hat <- c(Y[T,],X[T,1:(M*(p-1))])  
+        }
+        
+        Sig_T <- Sig_t[T,,] # use final observation for Sigma
+        tree.pred <- matrix(0, M)
+        for (hh in seq_len(fhorz)){
+          for (j in seq_len(M)) tree.pred[j] <- sampler.list[[j]]$predict(X.hat)
+          Y.tp1 <- as.numeric(tree.pred) + t(chol(Sig_T))%*%rnorm(M)
+          
+          if (cons){
+            X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))],1)
+          }else{
+            X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))])
+          }
+          Yfc[hh,] <- Y.tp1
+        }
+      }else if(VAR.mean=="linear"){
+        MM <- get_companion
+        comp <- get_companion(A_draw,c(M,cons,p))
+        MM <- comp$MM
+        Jm <- comp$Jm
+        Sig_T <- Sig_t[T,,]
+        
+        SS <- matrix(0,M*p,M*p)
+        SS[1:M,1:M] <- Sig_T
+        zt <- as.numeric(t(Y[T:(T-p+1),]))
+        for(hh in 1:fhorz){
+          zt <- MM%*%zt
+          cholSig <- t(chol(SS[1:M,1:M]))
+          Yfc[hh,] <- zt[1:M]+cholSig%*%rnorm(M,0,1)
+          SS <- MM%*%SS%*%t(MM)+Jm%*%Sig_T%*%t(Jm)
+        }
+      }
+      fcst_store[in.thin,,] <- (Yfc*t(matrix(Ysd,M,fhorz)))+t(matrix(Ymu,M,fhorz))
     }
     if(!quiet) setTxtProgressBar(pb, irep)
   }
@@ -461,3 +460,6 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
   return_obj <- list("Y"=Y_store,"fcst"=fcst_store,"Yq"=Yq_store)
   return(return_obj)
 }
+
+
+
