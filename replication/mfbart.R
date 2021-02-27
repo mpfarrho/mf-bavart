@@ -234,9 +234,9 @@ mfbart <- function(Y.raw,VAR.mean="bart",p=3,nburn=5000,nsave=5000,prior.cov=0.0
             YY <- (Y[,nr] - Z%*%A0.nr)*norm
           }
           
-          V_post <- try(solve((crossprod(XX)) + diag(theta[,nr])),silent=T)
-          if (is(V_post,"try-error")) V_post <- ginv((crossprod(XX) + diag(theta[,nr])))
-          A_mean <- V_post %*% (crossprod(XX, YY)+diag(theta[,nr])%*%A.prior[,nr])
+          V_post <- try(solve((crossprod(XX)) + diag(1/theta[,nr])),silent=T)
+          if (is(V_post,"try-error")) V_post <- ginv((crossprod(XX) + diag(1/theta[,nr])))
+          A_mean <- V_post %*% (crossprod(XX, YY)+diag(1/theta[,nr])%*%A.prior[,nr])
           A.draw.nr <- try(A_mean+t(chol(V_post))%*%rnorm(K,0,1),silent=T)
           if (is(A.draw.nr,"try-error")) A.draw.nr <- mvrnorm(1,A_mean,V_post)
           A[,nr] <- A.draw.nr
