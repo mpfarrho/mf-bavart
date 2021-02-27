@@ -211,9 +211,9 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
             Y_mm <- (Y[,mm] - Z_mm%*%A0_mm)*norm
           }
           
-          V_post <- try(solve((crossprod(X_mm)) + diag(theta_A[,mm])),silent=T)
-          if (is(V_post,"try-error")) V_post <- ginv((crossprod(X_mm) + diag(theta_A[,mm])))
-          A_mean <- V_post %*% (crossprod(X_mm, Y_mm)+diag(theta_A[,mm])%*%A_prior[,mm])
+          V_post <- try(solve((crossprod(X_mm)) + diag(1/theta_A[,mm])),silent=T)
+          if (is(V_post,"try-error")) V_post <- ginv((crossprod(X_mm) + diag(1/theta_A[,mm])))
+          A_mean <- V_post %*% (crossprod(X_mm, Y_mm)+diag(1/theta_A[,mm])%*%A_prior[,mm])
           A_mm <- try(A_mean+t(chol(V_post))%*%rnorm(K,0,1),silent=T)
           if (is(A_mm,"try-error")) A_mm <- mvrnorm(1,A_mean,V_post)
           A_draw[,mm] <- A_mm
