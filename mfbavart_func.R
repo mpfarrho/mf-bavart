@@ -6,7 +6,7 @@
 # In addition to the baseline model in the paper, the code also includes an option
 # to introduce stochastic volatility in the error terms.
 
-mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE,sv=FALSE,var.thrsh=10,max.count.var=10,
+mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,exact=FALSE,sv=FALSE,var.thrsh=10,max.count.var=10,
                      cgm.level=0.95,cgm.exp=2,sd.mu=2,num.trees=250,prior.sig,
                      nburn=1000,nsave=1000,thinfac=1,
                      quiet=FALSE){
@@ -137,32 +137,26 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
       )
     }
   }
-  # priors for variance if SV=FALSE and VAR.mean=="linear"
-  a0sig <- prior.sig[1]
-  b0sig <- prior.sig[2]
-  
   # priors for coefficients
   A_prior <- matrix(0,K,M)
   theta_A <- matrix(1,K,M)
   theta_A0 <- matrix(1,M,M)
   
   # BART initialization
-  if(VAR.mean=="bart"){
-    control <- dbartsControl(verbose = FALSE, keepTrainingFits = TRUE, useQuantiles = FALSE,
-                             keepTrees = FALSE, n.samples = ntot,
-                             n.cuts = 100L, n.burn = nburn, n.trees = num.trees, n.chains = 1,
-                             n.threads = 1, n.thin = 1L, printEvery = 1,
-                             printCutoffs = 0L, rngKind = "default", rngNormalKind = "default",
-                             updateState = FALSE)
-    sampler.list <- list()
-    svdraw.list <- list()
-    for (jj in seq_len(M)){
-      sampler.list[[jj]] <- dbarts(Y[,jj]~X, control = control,tree.prior = cgm(cgm.exp, cgm.level), node.prior = normal(sd.mu), n.samples = nsave, weights=rep(1,T), sigma=sqrt(Sig_OLS[jj,jj]), resid.prior = chisq(prior.sig[[1]], prior.sig[[2]]))
-    }
-    sampler.run <- list()
-    sigma.mat <- matrix(NA, M, 1)
-    count.mat <- matrix(0, M*p, M)
+  control <- dbartsControl(verbose = FALSE, keepTrainingFits = TRUE, useQuantiles = FALSE,
+                           keepTrees = FALSE, n.samples = ntot,
+                           n.cuts = 100L, n.burn = nburn, n.trees = num.trees, n.chains = 1,
+                           n.threads = 1, n.thin = 1L, printEvery = 1,
+                           printCutoffs = 0L, rngKind = "default", rngNormalKind = "default",
+                           updateState = FALSE)
+  sampler.list <- list()
+  svdraw.list <- list()
+  for (jj in seq_len(M)){
+    sampler.list[[jj]] <- dbarts(Y[,jj]~X, control = control,tree.prior = cgm(cgm.exp, cgm.level), node.prior = normal(sd.mu), n.samples = nsave, weights=rep(1,T), sigma=sqrt(Sig_OLS[jj,jj]), resid.prior = chisq(prior.sig[[1]], prior.sig[[2]]))
   }
+  sampler.run <- list()
+  sigma.mat <- matrix(NA, M, 1)
+  count.mat <- matrix(0, M*p, M)
   
   # -----------------------------------------------------------------------------
   # Initialize HS prior on covariances (if any)
@@ -171,12 +165,6 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
   tau.A0 <- 1
   zeta.A0 <- 1
   prior.cov <- rep(1, M*(M-1)/2)
-  
-  # initialize HS prior on linear VAR coefficients
-  lambda.VAR <- 1
-  nu.VAR <- 1
-  tau.VAR <- 1
-  zeta.VAR <- 1
   
   # storage objects
   Y_store <- array(NA,dim=c(nthin,T,M)) # filtered data
@@ -198,103 +186,49 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
     # stability check
     while(var.check){
       count.var <- count.var + 1
-      if(VAR.mean=="linear"){
-        for (mm in seq_len(M)){
-          # mean coefficients
-          norm <- exp(-H[,mm]/2)
-          X_mm <- X*norm
-          if(mm == 1){
-            Y_mm <- Y[,mm]*norm
-          }else{
-            Z_mm <- eta[,1:(mm-1),drop=F]
-            A0_mm <- A0_draw[mm,1:(mm-1)]
-            Y_mm <- (Y[,mm] - Z_mm%*%A0_mm)*norm
-          }
-          
-          V_post <- try(solve((crossprod(X_mm)) + diag(1/theta_A[,mm])),silent=T)
-          if (is(V_post,"try-error")) V_post <- ginv((crossprod(X_mm) + diag(1/theta_A[,mm])))
-          A_mean <- V_post %*% (crossprod(X_mm, Y_mm)+diag(1/theta_A[,mm])%*%A_prior[,mm])
-          A_mm <- try(A_mean+t(chol(V_post))%*%rnorm(K,0,1),silent=T)
-          if (is(A_mm,"try-error")) A_mm <- mvrnorm(1,A_mean,V_post)
-          A_draw[,mm] <- A_mm
-          
-          # covariance matrix
-          eta[,mm] <- Y[,mm] - X%*%A_mm
-          if(mm>1){
-            u_mm <- eta[,1:(mm-1),drop=F]*norm
-            eta_mm <- eta[,mm]*norm
-            
-            if(mm==2){
-              v0.inv <- 1/theta_A0[mm,1]
-            }else{
-              v0.inv <- diag(1/theta_A0[mm,1:(mm-1)])
-            }
-            
-            V.cov <- solve(crossprod(u_mm) + v0.inv)
-            mu.cov <- V.cov %*% crossprod(u_mm, eta_mm)
-            mu.cov.draw <- mu.cov + t(chol(V.cov)) %*% rnorm(ncol(V.cov)) 
-            A0_draw[mm, 1:(mm-1)] <- mu.cov.draw
-          }
-        }  
-      }else if(VAR.mean=="bart"){
-        X.ginv <- MASS::ginv(X)
-        for (mm in seq_len(M)){
-          if (mm > 1){
-            Z_mm <- eta[,1:(mm-1), drop=F]
-            A0_mm <- A0_draw[mm,1:(mm-1)]
-            sampler.list[[mm]]$setResponse(Y[,mm] - Z_mm%*%A0_mm)
-          }
-          rep_mm <- sampler.list[[mm]]$run(0L, 1L) # construct BART sample using dbarts (V. Dorie)
-          
-          sampler.run[[mm]] <- rep_mm
-          sigma.mat[mm,] <- rep_mm$sigma
-          if (any(is.na(rep_mm$train))) break
-          eta[,mm] <- Y[,mm] - rep_mm$train
-          A_draw[,mm] <- X.ginv%*%rep_mm$train
-          count.mat[,mm] <- rep_mm$varcount
-          if (mm > 1){
-            norm_mm <- as.numeric(exp(-.5*sv_latent[[mm]]) * 1/sigma.mat[mm,])
-            u_mm <- eta[,1:(mm-1),drop=F]*norm_mm
-            eta_mm <- eta[,mm]*norm_mm
-            if (mm == 2) v0.inv <- 1/theta_A0[mm,1] else v0.inv <- diag(1/theta_A0[mm,1:(mm-1)])
-            V.cov <- solve(crossprod(u_mm) + v0.inv)
-            mu.cov <- V.cov %*% crossprod(u_mm, eta_mm)
-            mu.cov.draw <- mu.cov + t(chol(V.cov)) %*% rnorm(ncol(V.cov)) 
-            A0_draw[mm,1:(mm-1)] <- mu.cov.draw
-          }
+      X.ginv <- MASS::ginv(X)
+      for (mm in seq_len(M)){
+        if (mm > 1){
+          Z_mm <- eta[,1:(mm-1), drop=F]
+          A0_mm <- A0_draw[mm,1:(mm-1)]
+          sampler.list[[mm]]$setResponse(Y[,mm] - Z_mm%*%A0_mm)
+        }
+        rep_mm <- sampler.list[[mm]]$run(0L, 1L) # construct BART sample using dbarts (V. Dorie)
+        
+        sampler.run[[mm]] <- rep_mm
+        sigma.mat[mm,] <- rep_mm$sigma
+        if (any(is.na(rep_mm$train))) break
+        eta[,mm] <- Y[,mm] - rep_mm$train
+        A_draw[,mm] <- X.ginv%*%rep_mm$train
+        count.mat[,mm] <- rep_mm$varcount
+        if (mm > 1){
+          norm_mm <- as.numeric(exp(-.5*sv_latent[[mm]]) * 1/sigma.mat[mm,])
+          u_mm <- eta[,1:(mm-1),drop=F]*norm_mm
+          eta_mm <- eta[,mm]*norm_mm
+          if (mm == 2) v0.inv <- 1/theta_A0[mm,1] else v0.inv <- diag(1/theta_A0[mm,1:(mm-1)])
+          V.cov <- solve(crossprod(u_mm) + v0.inv)
+          mu.cov <- V.cov %*% crossprod(u_mm, eta_mm)
+          mu.cov.draw <- mu.cov + t(chol(V.cov)) %*% rnorm(ncol(V.cov)) 
+          A0_draw[mm,1:(mm-1)] <- mu.cov.draw
         }
       }
       
       shock_norm <- eta %*% t(solve(A0_draw))
-      if(VAR.mean=="linear"){
-        if(sv){
-          for (mm in seq_len(M)){
-            svdraw_mm <- svsample_fast_cpp(shock_norm[,mm], startpara = sv_draw[[mm]], startlatent = sv_latent[[mm]], priorspec = sv_priors[[mm]])
-            sv_draw[[mm]][c("mu", "phi", "sigma")] <- as.list(svdraw_mm$para[, c("mu", "phi", "sigma")])
-            H[,mm] <- sv_latent[[mm]] <- svdraw_mm$latent
-          }
-        }else{
-          for(mm in seq_len(M)){
-            H[,mm] <- log(1/rgamma(1,a0sig+T/2,b0sig+crossprod(shock_norm[,mm])/2))
-          }
+      if(sv){
+        for (mm in seq_len(M)){
+          svdraw_mm <- svsample_general_cpp(shock_norm[,mm]/sigma.mat[mm], startpara = sv_draw[[mm]], startlatent = sv_latent[[mm]], priorspec = sv_priors[[mm]])
+          sv_draw[[mm]][c("mu", "phi", "sigma")] <- as.list(svdraw_mm$para[, c("mu", "phi", "sigma")])
+          sv_latent[[mm]] <- svdraw_mm$latent
+          
+          normalizer <- as.numeric(exp(-.5*svdraw_mm$latent))
+          weights.new <- as.numeric(exp(-svdraw_mm$latent))
+          
+          dat <- dbartsData(formula = Y[,mm]~X,weights=weights.new)
+          sampler.list[[mm]]$setData(dat)
+          H[,mm] <- log(sigma.mat[mm]^2) + svdraw_mm$latent
         }
-      }else if(VAR.mean=="bart"){
-        if(sv){
-          for (mm in seq_len(M)){
-            svdraw_mm <- svsample_general_cpp(shock_norm[,mm]/sigma.mat[mm], startpara = sv_draw[[mm]], startlatent = sv_latent[[mm]], priorspec = sv_priors[[mm]])
-            sv_draw[[mm]][c("mu", "phi", "sigma")] <- as.list(svdraw_mm$para[, c("mu", "phi", "sigma")])
-            sv_latent[[mm]] <- svdraw_mm$latent
-            
-            normalizer <- as.numeric(exp(-.5*svdraw_mm$latent))
-            weights.new <- as.numeric(exp(-svdraw_mm$latent))
-            
-            dat <- dbartsData(formula = Y[,mm]~X,weights=weights.new)
-            sampler.list[[mm]]$setData(dat)
-            H[,mm] <- log(sigma.mat[mm]^2) + svdraw_mm$latent
-          }
-        }else{
-          H[,mm] <- log(sigma.mat[mm]^2)
-        }
+      }else{
+        H[,mm] <- log(sigma.mat[mm]^2)
       }
       
       for(tt in seq_len(T)){
@@ -314,18 +248,6 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
       theta_A0[lower.tri(theta_A0)] <- prior.cov
       theta_A0[theta_A0>10] <- 10
       theta_A0[theta_A0<1e-8] <- 1e-8
-      
-      if(VAR.mean=="linear"){
-        hs_draw <- get.hs(bdraw=as.numeric(A_draw),lambda.hs=lambda.VAR,nu.hs=nu.VAR,tau.hs=tau.VAR,zeta.hs=zeta.VAR)
-        lambda.VAR <- hs_draw$lambda
-        nu.VAR <- hs_draw$nu
-        tau.VAR <- hs_draw$tau
-        zeta.VAR <- hs_draw$zeta
-        theta_A <- matrix(hs_draw$psi,K,M)
-        
-        theta_A[theta_A>10] <- 10
-        theta_A[theta_A<1e-8] <- 1e-8
-      }
       
       # 3) updating latent states
       if(cons){
@@ -361,17 +283,13 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
       X <- mlag(YY,p)[(p+1):nrow(YY),]
     }
     Y <- YY[(p+1):nrow(YY),]
-    if(VAR.mean=="bart"){
-      for(mm in 1:M){
-        sampler.list[[mm]]$setPredictor(X) # set predictors in BART to new latent X matrix
-      }
+    for(mm in 1:M){
+      sampler.list[[mm]]$setPredictor(X) # set predictors in BART to new latent X matrix
     }
     
     if(irep %in% thin.set){
       in.thin <- in.thin+1
-      if(VAR.mean=="linear"){
-        Y_store[in.thin,,] <- (beta2*t(matrix(Ysd,M,T)))+t(matrix(Ymu,M,T))
-      }else if(VAR.mean=="bart"){
+      if(exact){
         for(mm in seq_len(M)){
           if(mm>M_h){
             rep_mm <- sampler.run[[mm]]
@@ -387,42 +305,24 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,VAR.mean="bart",exact=FALSE
     
     Yfc <- matrix(NA,fhorz,M)
     if(fhorz>0){
-      if(VAR.mean=="bart"){
+      if (cons){
+        X.hat <- c(Y[T,],X[T,1:(M*(p-1))],1)
+      }else{
+        X.hat <- c(Y[T,],X[T,1:(M*(p-1))])  
+      }
+      
+      Sig_T <- Sig_t[T,,] # use final observation for Sigma
+      tree.pred <- matrix(0, M)
+      for (hh in seq_len(fhorz)){
+        for (j in seq_len(M)) tree.pred[j] <- sampler.list[[j]]$predict(X.hat)
+        Y.tp1 <- as.numeric(tree.pred) + t(chol(Sig_T))%*%rnorm(M)
+        
         if (cons){
-          X.hat <- c(Y[T,],X[T,1:(M*(p-1))],1)
+          X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))],1)
         }else{
-          X.hat <- c(Y[T,],X[T,1:(M*(p-1))])  
+          X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))])
         }
-        
-        Sig_T <- Sig_t[T,,] # use final observation for Sigma
-        tree.pred <- matrix(0, M)
-        for (hh in seq_len(fhorz)){
-          for (j in seq_len(M)) tree.pred[j] <- sampler.list[[j]]$predict(X.hat)
-          Y.tp1 <- as.numeric(tree.pred) + t(chol(Sig_T))%*%rnorm(M)
-          
-          if (cons){
-            X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))],1)
-          }else{
-            X.hat <- c(Y.tp1, X.hat[1:(M*(p-1))])
-          }
-          Yfc[hh,] <- Y.tp1
-        }
-      }else if(VAR.mean=="linear"){
-        MM <- get_companion
-        comp <- get_companion(A_draw,c(M,cons,p))
-        MM <- comp$MM
-        Jm <- comp$Jm
-        Sig_T <- Sig_t[T,,]
-        
-        SS <- matrix(0,M*p,M*p)
-        SS[1:M,1:M] <- Sig_T
-        zt <- as.numeric(t(Y[T:(T-p+1),]))
-        for(hh in 1:fhorz){
-          zt <- MM%*%zt
-          cholSig <- t(chol(SS[1:M,1:M]))
-          Yfc[hh,] <- zt[1:M]+cholSig%*%rnorm(M,0,1)
-          SS <- MM%*%SS%*%t(MM)+Jm%*%Sig_T%*%t(Jm)
-        }
+        Yfc[hh,] <- Y.tp1
       }
       fcst_store[in.thin,,] <- (Yfc*t(matrix(Ysd,M,fhorz)))+t(matrix(Ymu,M,fhorz))
     }
