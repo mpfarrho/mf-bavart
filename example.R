@@ -18,7 +18,7 @@ mf_list[c("CPIAUCSL", "GDPC1")] <- lapply(mf_list[c("CPIAUCSL", "GDPC1")], log_d
 mf_list <- mapply(window, x = mf_list, start = list(c(1980, 4), c(1980, 4), c(1980, 2)))
 data <- mf_list
 
-est_obj <- mfbavart(data,itr="grw",fhorz=2,VAR.mean="bart",prior.sig=c(200,0.75))
+est_obj <- mfbavart(data,itr="grw",fhorz=2,prior.sig=c(200,0.75))
 
 Yq <- est_obj$Yq
 GDPC1_post <- t(apply(Yq,c(2,3),quantile,probs=c(0.16,0.5,0.84),na.rm=T)[,,"GDPC1"])
