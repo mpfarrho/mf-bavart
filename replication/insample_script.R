@@ -1,4 +1,4 @@
-source("mfbart.R")
+source("mfbavart.R")
 nsave <- 5000 #Save 1000 draws
 nburn <- 5000 # Burn 1000 draws
 
