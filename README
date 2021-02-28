@@ -31,8 +31,6 @@ Inputs for mfbavart(...):
 - p               numeric, lag-length of the VAR (minimum of 5 if itr=="grw", and 3 if itr=="lvl")
 - fhorz           numeric, forecast horizon in months (3 per quarter)
 - cons            TRUE/FALSE, whether a constant should be included
-- VAR.mean        "linear" for horseshoe prior on linear VAR coefficients, "bart" for using 
-                  additive regression trees
 - exact           TRUE/FALSE, whether BART fit is stored in output values or 
                   filtered data based on approximation
 - sv              TRUE/FALSE, whether structural errors feature stochastic volatility
