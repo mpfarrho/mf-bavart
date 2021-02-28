@@ -8,7 +8,7 @@ require(mfbvar)
 require(FKF)
 require(Matrix)
 
-source("mfbart.R")
+source("mfbavart.R")
 
 set.seed(123)
 #Simulate a mixed frequency VAR model
