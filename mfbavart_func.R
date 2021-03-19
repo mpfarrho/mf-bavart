@@ -19,7 +19,7 @@ mfbavart <- function(data,itr,p=5,fhorz=0,cons=FALSE,exact=FALSE,sv=FALSE,var.th
   require(abind) # helper for transformations of objects
   
   # auxiliary functions
-  source("mf-bavart-main/aux_func.R")
+  source("aux_func.R")
   
   # construct design matrices
   Ylist <- list_to_matrix(data)
