@@ -1,9 +1,6 @@
 Replication files for “Nowcasting in a Pandemic using Non-Parametric Mixed Frequency VARs” by F. Huber, G. Koop, L. Onorante, M. Pfarrhofer and J. Schreiner
 
 Source-files:
-“mfbavart.R” contains the main function to estimate the MF-BAVART model. 
-“aux_func.R” collects several auxiliary and helper functions needed for estimating the model.
-“insample_script.R” shows how to use the MF-BAVART for insample analysis.
 “simulation_script.R” contains the simulation study.
 “data_script.R” transforms xls-files in “raw-data” for use of the functions.
 
