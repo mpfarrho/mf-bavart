@@ -1,7 +1,7 @@
 "Nowcasting in a Pandemic using Non-Parametric Mixed Frequency VARs"
 by Huber, F., Koop, G., Onorante, L., Pfarrhofer, M., and J. Schreiner,
-Journal of Econometrics (forthcoming)
-- Published at        https://www.sciencedirect.com/science/article/pii/S0304407620303936
+Journal of Econometrics, 232(1), 2023, 52-69.
+- Published at        https://doi.org/10.1016/j.jeconom.2020.11.006
 - Working paper at    https://arxiv.org/abs/2008.12706
 
 These files create a function mfbavart(...) to estimate the MF-BAVART model.
@@ -40,7 +40,6 @@ Inputs for mfbavart(...):
 - sd.mu           numeric, \gamma in the paper
 - num.trees       numeric, number of trees for BART, S in the paper
 - prior.sig       numeric of length 2, [1] nu_j, [2] v in the paper, 
-                  if VAR.mean=="linear" shape/rate of iG prior
 - nburn           numeric, number of burnins
 - nsave           numeric, number of draws for posterior/predictive inference
 - thinfac         numeric, thinning factor
