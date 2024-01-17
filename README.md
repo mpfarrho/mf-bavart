@@ -1,28 +1,21 @@
 ## Description
-"Nowcasting in a Pandemic using Non-Parametric Mixed Frequency VARs"
-by Huber, F., Koop, G., Onorante, L., Pfarrhofer, M., and J. Schreiner,
-Journal of Econometrics, 232(1), 2023, 52-69.
-- Published at        https://doi.org/10.1016/j.jeconom.2020.11.006
-- Working paper at    https://arxiv.org/abs/2008.12706
+"Nowcasting in a Pandemic using Non-Parametric Mixed Frequency VARs" by Huber, F., Koop, G., Onorante, L., Pfarrhofer, M., and J. Schreiner, _Journal of Econometrics_, **232**(1), 2023, 52-69.
+- [Publication](https://doi.org/10.1016/j.jeconom.2020.11.006)
+- [Working paper](https://arxiv.org/abs/2008.12706)
 
+### Code files
 These files create a function mfbavart(...) to estimate the MF-BAVART model.
 - mfbavart_func.R contains the main function
 - aux_func.R collects several auxiliary functions
 - example.R contains an example code for using the function.
 
-In addition to the baseline model in the paper, the code also includes an option
-to introduce stochastic volatility (SV) in the error terms. Several parts of the original code
-used for the paper in directory "replication" have been replaced to improve 
-computational efficiency.
+In addition to the baseline model in the paper, the code also includes an option to introduce stochastic volatility (SV) in the error terms. Several parts of the original code used for the paper in directory "replication" have been replaced to improve computational efficiency.
 
-This code comes without technical support of any kind. Please report any typos
-or errors to: mpfarrho@gmail.com. The code is free to use, provided that the paper is cited properly.
+This code comes without technical support of any kind. Please report any typos or errors to: mpfarrho@gmail.com. The code is free to use, provided that the paper is cited properly.
 
-Some codes and helper functions are taken or adapted from the "mfbvar" package.
-Thanks to Vincent Dorie (mtn. of "dbarts") and Sebastian Ankargren (mtn. of "mfbvar")
-for technical support regarding their excellent packages.
+Some codes and helper functions are taken or adapted from the "mfbvar" package. Thanks to Vincent Dorie (mtn. of "dbarts") and Sebastian Ankargren (mtn. of "mfbvar") for technical support regarding their excellent packages.
 
-Inputs for mfbavart(...):
+### Inputs for mfbavart(...):
 - data            a list that contains ts-objects of different frequencies in its 
                   M (number of endogenous variables) slots, such that high-frequency (monthly)
                   series are ordered first and followed by low-frequency series (quarterly)
