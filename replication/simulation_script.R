@@ -8,10 +8,8 @@ require(mfbvar)
 require(FKF)
 require(Matrix)
 
-source("mfbavart.R")
-
 set.seed(123)
-#Simulate a mixed frequency VAR model
+# Simulate a mixed frequency VAR model
 replications <- 150
 intensity <- c(0, 6, 15, 18, 25)
 start.crisis <- c(10,20, 25, 35)
@@ -34,7 +32,7 @@ p.true <- 5
 Y.latent <- matrix(0, T, M)
 Y.observed <- matrix(NA, T, M)
 n.quarter <- 1
-#Start by simulating the latent process (which is a standard VAR model)
+# Start by simulating the latent process (which is a standard VAR model)
 if (dgp.set == "VAR"){
   stab.cond <- TRUE
   while (stab.cond){
@@ -65,7 +63,7 @@ if (dgp.set == "VAR"){
    }
    start.crisis <- length.crisis
 }else{
-  #Non-linear function
+  # Non-linear function
   A.true <- matrix(rnorm(M*M, 0, 0.1), M, M)
   diag(A.true) <- 0
 
@@ -92,34 +90,3 @@ for (i in 1:T){
   }
 }
 Y.observed[,2:M] <- Y.latent[, 2:M]
-
-nsave <- 500 #Save 1000 draws
-nburn <- 500 # Burn 1000 draws
-p <- 5 # laglength
-prior.cov <- 0.01
-sd.mu <- 2
-var.thrsh <- 3
-count.var.max <- 100
-
-cgm.level <- 0.95
-cgm.exp <- 2
-num.trees <- 250
-
-ntot <- nsave+nburn
-prior.sig <- c(nrow(Y.observed)/2, 0.75)
-mf.country <- mfbart(Y.observed,p=p,VAR.mean = "bart",nburn=nburn,nsave=nsave,prior.cov=0.01,cgm.level=cgm.level,cgm.exp=cgm.exp,sd.mu=sd.mu,num.trees=num.trees,prior.sig = prior.sig,n.quarter=1,quiet=FALSE,iter.update=50,var.thrsh=3, max.count.var = 20, exact=FALSE)
-mf.var <- mfbart(Y.observed,p=p,VAR.mean = "linear",nburn=nburn,nsave=nsave,prior.cov=0.01,cgm.level=cgm.level,cgm.exp=cgm.exp,sd.mu=sd.mu,num.trees=num.trees,prior.sig = prior.sig,n.quarter=1,quiet=FALSE,iter.update=50,var.thrsh=3, max.count.var = 20, exact=FALSE)
-
-pred.dens.BART <- t(apply(mf.country$data_m,2,function(x) quantile(x, c(0.05 ,0.5,0.95),na.rm=T)))
-pred.dens.VAR <- t(apply(mf.var$data_m,2,function(x) quantile(x, c(0.16 ,0.5,0.84), na.rm=T)))
-
-foldername <- "Results"
-dir.create(foldername, showWarnings = FALSE)
-
-pdf(paste0(foldername,"/one_sim", dgp.set, ".pdf"), width=16, height=8)
-Y.out <- Y.latent[5:(T-1)]
-ts.plot(Y.out, col=c(0,1,1,2),  ylab ="", xlab="")
-polygon(c(1:nrow(pred.dens.BART),rev(1:nrow(pred.dens.BART))),c(pred.dens.BART[,1],rev(pred.dens.BART[,3])),col="lightgray",border=NA)##,irf_true[jj,kk,]
-lines(pred.dens.BART[,1]);lines(pred.dens.BART[,3]);lines(pred.dens.BART[,2])
-lines(Y.out, col = "red")
-dev.off()
