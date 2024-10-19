@@ -11,7 +11,7 @@ These files create a function mfbavart(...) to estimate the MF-BAVART model.
 
 In addition to the baseline model in the paper, the code also includes an option to introduce stochastic volatility (SV) in the error terms. Several parts of the original code used for the paper in directory "replication" have been replaced to improve computational efficiency.
 
-This code comes without technical support of any kind. Please report any typos or errors to: mpfarrho@gmail.com. The code is free to use, provided that the paper is cited properly.
+This code comes without technical support of any kind. The code is free to use, provided that the paper is cited properly.
 
 Some codes and helper functions are taken or adapted from the "mfbvar" package. Thanks to Vincent Dorie (mtn. of "dbarts") and Sebastian Ankargren (mtn. of "mfbvar") for technical support regarding their excellent packages.
 
